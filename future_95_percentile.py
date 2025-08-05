@@ -24,7 +24,8 @@ pop_path = ''
 # Define years for which to calculate the temperature index
 years = [2025, 2030, 2050]
 
-models_temperature_index = utils.temperature_index_all_models(model_path=model_path, 
-                                                              data_path=data_path, 
-                                                              pop_path=pop_path, 
-                                                              years=years)
+
+utils.temp_index_all_models(model_path=model_path, 
+                            data_path=data_path, 
+                            pop_path=pop_path, 
+                            years=years)

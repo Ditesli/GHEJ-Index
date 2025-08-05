@@ -196,7 +196,7 @@ def get_region_values(excedance_count: xr.Dataset, pop_year: xr.Dataset,
     })
     
     # Remove rows where the region is NaN
-    regions_df = regions_df[~regions_df['IMAGE_region'].isna()]
+    regions_df = regions_df[(~regions_df['IMAGE_region'].isna()) & (regions_df['IMAGE_region']!=27.)]
     
     # Group by region and calculate the weighted average of the 95th percentile exceedance
     regions_df = (
@@ -229,6 +229,8 @@ def temperature_index(years, model_path, data_path, pop_file, final_data, model_
     - final_regions: pd.DataFrame, DataFrame containing the total number of days exceeding the 95th percentile
     and the population exposure for each region.
     '''
+    
+    print(f'Processing model file: {model_file_name}')
     
     # p90_hist = xr.open_dataset(data_path + 'p90.nc')
     p95_hist = xr.open_dataset(data_path + 'p95.nc')
@@ -270,11 +272,11 @@ def temperature_index(years, model_path, data_path, pop_file, final_data, model_
             # Merge the results into the final DataFrame
             final_data = final_data.merge(final_regions, on='IMAGE_region', how='outer')
             
-    return final_data, year
+    return final_data
 
 
 
-def temperature_index_all_models(model_path, data_path, pop_path, years):
+def temp_index_all_models(model_path, data_path, pop_path, years):
     
     # Initialize an empty DataFrame to hold the temperature index data for each model
     models_data = pd.DataFrame(index=pd.Index(np.arange(1,28,1.), name='IMAGE_region'))
@@ -284,9 +286,7 @@ def temperature_index_all_models(model_path, data_path, pop_path, years):
 
     # Loop through each file and extract the temperature index data for the specified years
     for file in files:
-        models_data, year = temperature_index(years, model_path, data_path, pop_path, models_data, os.path.basename(file))
-        print(f'Processed {file} for year {year}')
-        
+        models_data = temperature_index(years, model_path, data_path, pop_path, models_data, os.path.basename(file))        
 
     # Extract the year, model, and scenario from the column names
     column_info = models_data.columns.str.extract(r'(?P<year>\d{4})_(?P<model>.+?)_(?P<scenario>.+)')
@@ -314,5 +314,8 @@ def temperature_index_all_models(model_path, data_path, pop_path, years):
 
     # Merge the region names with the summary DataFrame
     temperature_index_models = pd.merge(image_names['Region'], df_summary, left_index=True, right_index=True)
+    
+    temperature_index_models.to_csv(model_path + 'temperature_extremes_index.csv', index=False)
+    models_data.to_csv(model_path + 'temperature_extremes_index_all_models.csv', index=False)
     
     return temperature_index_models
