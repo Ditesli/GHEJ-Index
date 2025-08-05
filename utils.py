@@ -276,7 +276,7 @@ def temperature_index(years, model_path, data_path, pop_file, final_data, model_
 
 
 
-def temperature_index_all_models(model_path, data_path, pop_path, years):
+def temp_index_all_models(model_path, data_path, pop_path, years):
     
     # Initialize an empty DataFrame to hold the temperature index data for each model
     models_data = pd.DataFrame(index=pd.Index(np.arange(1,28,1.), name='IMAGE_region'))
@@ -314,5 +314,8 @@ def temperature_index_all_models(model_path, data_path, pop_path, years):
 
     # Merge the region names with the summary DataFrame
     temperature_index_models = pd.merge(image_names['Region'], df_summary, left_index=True, right_index=True)
+    
+    temperature_index_models.to_csv(model_path + 'temperature_extremes_index.csv', index=False)
+    models_data.to_csv(model_path + 'temperature_extremes_index_all_models.csv', index=False)
     
     return temperature_index_models
