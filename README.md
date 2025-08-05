@@ -19,7 +19,7 @@ Geospatial Research, Analysis, and Services Program (GRASP) (see documentation [
 
 The extreme heat days are defined as the number of days above the 95th historical percentile. The historical threshold is taken here as the threshold of the 1995-2024 period. These values were obtained using maximum daily (2m) temperature from the [ERA5 reanalysis data](https://cds.climate.copernicus.eu/datasets/derived-era5-single-levels-daily-statistics?tab=download), and calculating the 95th percentile per pixel (resolution of 0.25°x0.25°).
 
-This historical thresholds were used to count the days that surpass such values using ScenarioMIP data (tasmax) for the scenarios SSP1-1.9 and SSP1-2.6 and the models: CAMS-CSM1-0, CNRM-ESM2-1, EC-Earth3, EC-Earth3-Veg, FGOALS-g3, GFDL-ESM4, GISS-E2-1-G, IPSL-CM6A-LR, MIROC6, MPI-ESM1-2-LR, MRI-ESM2-0. Models that contain both scenarios and a varying resolution not lower than 250km. The index was calculated (per pixel)for the required years: 2025, 2030 and 2040.
+This historical thresholds were used to count the days that surpass such values using ScenarioMIP data (tasmax) for the scenarios SSP1-1.9, SSP1-2.6, SSP1-4.5 and the models: CAMS-CSM1-0, CNRM-ESM2-1, EC-Earth3, EC-Earth3-Veg, FGOALS-g3, GFDL-ESM4, GISS-E2-1-G, IPSL-CM6A-LR, MIROC6, MPI-ESM1-2-LR, MRI-ESM2-0. Models that contain both scenarios and a varying resolution not lower than 250km. The index was calculated (per pixel) for the required years: 2025, 2030 and 2040.
 
 The number of days per pixel was aggregated to every IMAGE region through the population weighted average. The code provides the model mean and the standard deviation.
 
