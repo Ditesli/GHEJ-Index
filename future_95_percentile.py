@@ -16,15 +16,16 @@ NOTE: The code assumes the CMIP6 files are named frolling the format:
 import utils
 
 # Define path to historical 95 percentile threshold data
-data_path = 'X:\\user\\liprandicn\\Data\\ERA5\\t2m_daily\\'
+data_path = ''
 # Define path to CMIP6 model data 
-model_path = 'X:\\user\\liprandicn\\Data\\CMIP6\\'
+model_path = ''
 # Define path to population data and IMAGE regions
-pop_path = 'X:\\user\\liprandicn\\Health Impacts Model\\Socioeconomic_Data\\Population\\GPOP\\'
+pop_path = ''
 # Define years for which to calculate the temperature index
 years = [2025, 2030, 2050]
 
-models_temperature_index = utils.temperature_index_all_models(model_path=model_path, 
-                                                              data_path=data_path, 
-                                                              pop_path=pop_path, 
-                                                              years=years)
+
+utils.temp_index_all_models(model_path=model_path, 
+                            data_path=data_path, 
+                            pop_path=pop_path, 
+                            years=years)
