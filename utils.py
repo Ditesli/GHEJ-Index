@@ -147,7 +147,7 @@ def pop_and_regions(file_path: str, scenario: str, year: int, tas_max: xr.Datase
     '''
     
     # Load the population data from the specified file path
-    pop = xr.open_dataset(file_path+'GPOP_SSP1_M.nc')
+    pop = xr.open_dataset(file_path+f'GPOP_{scenario}.nc')
     # Select yearly data for the specified scenario
     pop_year = pop.sel(time=f'{year}', method='nearest')
     # Interpolate lat and lon to match the model grid
@@ -164,8 +164,9 @@ def pop_and_regions(file_path: str, scenario: str, year: int, tas_max: xr.Datase
 
 
 
-def get_region_values(excedance_count: xr.Dataset, pop_year: xr.Dataset, 
-                      region_mask: xr.Dataset, model_file: str, year: int):
+def get_region_values(index_xarray: xr.Dataset, pop_year: xr.Dataset, 
+                      region_mask: xr.Dataset, model_file: str, year: int,
+                      index_type: str):
     
     """
     Calculate the total number of days exceeding the 95th percentile and the population exposure 
@@ -181,20 +182,23 @@ def get_region_values(excedance_count: xr.Dataset, pop_year: xr.Dataset,
     """
     
     # Extract the model name from the file name using regex
-    model_name = re.search(r'day_(.*)_r', model_file).group(1) 
+    if index_type == 'temperature_index':
+        model_name = re.search(r'day_(.*)_r', model_file).group(1) 
+    elif index_type == 'fwi':
+        model_name = re.search(r'fwixd_ann_(.*)_r', model_file).group(1)
     
     # Flatten the datasets to create a DataFrame for easier manipulation
     region_array = region_mask.GREG.values.flatten()
-    excedance_array = excedance_count.t2m_max_p95.values.flatten()
     pop_array = pop_year.GPOP.values.flatten()
+    index_array = index_xarray.values.flatten()
     
     # Create a DataFrame with the flattened data
     regions_df = pd.DataFrame({
         'IMAGE_region': region_array,
-        'T95': excedance_array,
+        'T95': index_array,
         'population': pop_array
     })
-    
+
     # Remove rows where the region is NaN
     regions_df = regions_df[(~regions_df['IMAGE_region'].isna()) & (regions_df['IMAGE_region']!=27.)]
     
@@ -210,7 +214,7 @@ def get_region_values(excedance_count: xr.Dataset, pop_year: xr.Dataset,
 
 
 
-def temperature_index(years, model_path, data_path, pop_file, final_data, model_file_name):
+def temperature_index(years, model_path, data_path, pop_file, final_data, model_file_name, scenario, index_type='temperature_index'):
     
     '''
     Calculate the number of days exceeding the 95th percentile of daily maximum temperature
@@ -264,10 +268,10 @@ def temperature_index(years, model_path, data_path, pop_file, final_data, model_
             excedance_count = (tas_max_year > p95_hist).sum(dim='valid_time')
             
             # Calculate the population exposure
-            population, image_regions = pop_and_regions(pop_file, 'SSP1', year, tas_max_year)
+            population, image_regions = pop_and_regions(pop_file, f'{scenario}', year, tas_max_year)
             
             # Get the total number of days exceeding the 95th percentile and the population exposure for each region
-            final_regions = get_region_values(excedance_count, population, image_regions, model_file_name, year)
+            final_regions = get_region_values(excedance_count.t2m_max_p95, population, image_regions, model_file_name, year, index_type)
 
             # Merge the results into the final DataFrame
             final_data = final_data.merge(final_regions, on='IMAGE_region', how='outer')
@@ -276,17 +280,76 @@ def temperature_index(years, model_path, data_path, pop_file, final_data, model_
 
 
 
-def temp_index_all_models(model_path, data_path, pop_path, years):
+def fire_weather_index(years, model_path, pop_path, final_data, model_file_name, scenario, index_type='fwi'):
+    
+    '''
+    Calculate the fire weather index for a given scenario and year using a specific model's data.
+    
+    Parameters:
+    - scenario: str, the socioeconomic scenario (e.g., 'ssp119', 'ssp126').
+    - year: int, the year for which to calculate the index.
+    - model_path: str, path to the directory containing the model data files.
+    - model_file_name: str, the name of the model file to be processed.
+    - data_path: str, path to the directory containing the historical data files.
+    - pop_path: str, path to the directory containing the population data files.
+    
+    Returns:
+    - final_data: pd.DataFrame, DataFrame containing the fire weather index for each region.
+    '''
+    
+    print(f'Processing model file: {model_file_name}')
+    
+    # Load the dataset for the specific model, scenario, and year
+    fwi = xr.open_dataset(model_path + model_file_name)
+    
+    # Align the data to ensure consistency in units and coordinates
+    fwi = align_data(fwi, celsius=False, longitude_shift=True, standar_names=True)
+    
+    # Iterate over the specified years and calculate the index
+    for year in years:
+        
+        # Select the fwi variable and filter by year
+        fwi_year = fwi.sel(valid_time=slice(f'{year}-01-01', f'{year}-12-31'))
+        
+        # Interpolate population data to match fwi grid
+        population, image_regions = pop_and_regions(pop_path, f'{scenario}', year, fwi_year)
+        
+        # Calculate total FWI exposure per region
+        final_regions = get_region_values(fwi_year.fwixd, population, image_regions, model_file_name, year, index_type)
+
+        # Merge the results into the final DataFrame
+        final_data = final_data.merge(final_regions, on='IMAGE_region', how='outer')
+        
+    return final_data
+
+
+
+def index_all_models(index_type, model_path, pop_path, years, scenario, data_path=None):
+    
+    '''
+    Calculate index for all models in the specified model path.
+    '''
     
     # Initialize an empty DataFrame to hold the temperature index data for each model
     models_data = pd.DataFrame(index=pd.Index(np.arange(1,28,1.), name='IMAGE_region'))
+    
+    if index_type == 'fwi':
+        
+        # Get all the netCDF files for tasmax in the specified model path
+        files = glob.glob(os.path.join(model_path, 'fwixd_ann_*.nc'))
+        
+        # Loop through each file and extract the fire weather index data for the specified years
+        for file in files:
+            models_data = fire_weather_index(years, model_path, pop_path, models_data, os.path.basename(file), scenario, index_type)
+        
+    if index_type == 'temperature_index':
 
-    # Get all the netCDF files for tasmax in the specified model path
-    files = glob.glob(os.path.join(model_path, 'tasmax_day_*.nc'))
+        # Get all the netCDF files for tasmax in the specified model path
+        files = glob.glob(os.path.join(model_path, 'tasmax_day_*.nc'))
 
-    # Loop through each file and extract the temperature index data for the specified years
-    for file in files:
-        models_data = temperature_index(years, model_path, data_path, pop_path, models_data, os.path.basename(file))        
+        # Loop through each file and extract the temperature index data for the specified years
+        for file in files:
+            models_data = temperature_index(years, model_path, data_path, pop_path, models_data, os.path.basename(file), scenario, index_type)        
 
     # Extract the year, model, and scenario from the column names
     column_info = models_data.columns.str.extract(r'(?P<year>\d{4})_(?P<model>.+?)_(?P<scenario>.+)')
@@ -313,9 +376,9 @@ def temp_index_all_models(model_path, data_path, pop_path, years):
     image_names = pd.read_csv(pop_path + 'IMAGE_regions.csv', index_col=0)
 
     # Merge the region names with the summary DataFrame
-    temperature_index_models = pd.merge(image_names['Region'], df_summary, left_index=True, right_index=True)
+    index_models = pd.merge(image_names['Region'], df_summary, left_index=True, right_index=True)
     
-    temperature_index_models.to_csv(model_path + 'temperature_extremes_index.csv', index=False)
-    models_data.to_csv(model_path + 'temperature_extremes_index_all_models.csv', index=False)
+    # Save the results to CSV files
+    index_models.to_csv(model_path + f'{index_type}_{scenario[:4]}-pop.csv', index=False)
+    models_data.to_csv(model_path + f'{index_type}_all_models_{scenario[:4]}-pop.csv', index=False)
     
-    return temperature_index_models
