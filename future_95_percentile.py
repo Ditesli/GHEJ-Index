@@ -23,9 +23,12 @@ model_path = ''
 pop_path = ''
 # Define years for which to calculate the temperature index
 years = [2025, 2030, 2050]
+# Define the population scenario for which to calculate the temperature index
+scenario = 'SSP1_M' # SSP1_M, SSP2_CP, SSP3_H, SSP4, SSP5_H	
 
-
-utils.temp_index_all_models(model_path=model_path, 
-                            data_path=data_path, 
-                            pop_path=pop_path, 
-                            years=years)
+utils.index_all_models(index_type='temperature_index',
+                       model_path=model_path,  
+                       pop_path=pop_path, 
+                       years=years,
+                       scenario=scenario,
+                       data_path=data_path) 
