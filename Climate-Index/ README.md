@@ -1,4 +1,10 @@
-# Extreme Heat Days Index
+# Introduction
+
+The CLimate-Index folder calculates:
+- Extreme Heat Days Indicator
+- Number of days with extreme fire weather
+
+# Files description
 Code to obtain the number of future extreme heat days for SHAPE-RCP scenarios. Results used in Weber et al.
 
 ### historical_percentile.py
@@ -7,15 +13,16 @@ Uses historical ERA5 reanalysis daily temperature data (tmax, 1995-2024 period) 
 ### future_percentile.py
 Uses ISIMIP climate projections and the netcdf files generated in historical_percentile.py to calculate the average number of days a region is exposed to extreme heat days. Calculations are done for a given year, RCP scenario and climate model. Final results are aggregated to [IMAGE regions](https://models.pbl.nl/image/Region_classification_map) via a population weighted average.
 
+### FWI.py
+
+
 ### utils.py
 Contains all the relevant functions for calculations.
 
 
-# Technical documentation
+# Extreme Heat Days Indicator
 
-The Extreme heat days indicator is based on the Environmental Justice Index documentation by the U.S. Centers for Disease Control and Prevention
-Agency for Toxic Substances and Disease Registry
-Geospatial Research, Analysis, and Services Program (GRASP) (see documentation [here](https://www.atsdr.cdc.gov/place-health/php/eji/eji-technical-documentation.html#:~:text=Access%20the%20EJI%20Technical%20Documentation%20for%20detailed%20information,Technical%20Documentation.%20Download%20the%202022%20EJI%20Technical%20Documentation.)).
+The Extreme heat days indicator is based on the Environmental Justice Index documentation by the U.S. Centers for Disease Control and Prevention Agency for Toxic Substances and Disease Registry Geospatial Research, Analysis, and Services Program (GRASP) (see documentation [here](https://www.atsdr.cdc.gov/place-health/php/eji/eji-technical-documentation.html#:~:text=Access%20the%20EJI%20Technical%20Documentation%20for%20detailed%20information,Technical%20Documentation.%20Download%20the%202022%20EJI%20Technical%20Documentation.)).
 
 The extreme heat days are defined as the number of days above the 95th historical percentile. The historical threshold is taken here as the threshold of the 1995-2024 period. These values were obtained using maximum daily (2m) temperature from the [ERA5 reanalysis data](https://cds.climate.copernicus.eu/datasets/derived-era5-single-levels-daily-statistics?tab=download), and calculating the 95th percentile per pixel (resolution of 0.25°x0.25°).
 
