@@ -1,4 +1,4 @@
-name: env_tempextrem_index
+name: env_climate_index
 dependencies:
   - xarray=2025.4.0
   - numpy=2.2.5
